@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SustainoScan AI - Science Sustainova 2026</title>
+    
+    <!-- Tailwind CSS for Styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React and ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    
+    <!-- Babel for JSX Transpilation -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        @keyframes scan {
+            0% { top: 0%; }
+            100% { top: 100%; }
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-5px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        body {
+            background-color: #030712;
+            margin: 0;
+            overflow-x: hidden;
+            font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
+        .scroll-hide::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        // --- CUSTOM SVG ICONS ---
+        const Icon = ({ d, className = "w-6 h-6", color = "currentColor" }) => (
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke={color} className={className}>
+                <path strokeLinecap="round" strokeLinejoin="round" d={d} />
+            </svg>
+        );
+
+        const Icons = {
+            Camera: (props) => <Icon {...props} d="M6.827 6.175A2.31 2.31 0 0 1 5.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 0 0 2.25 2.25h15A2.25 2.25 0 0 0 21.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 0 0-1.134-.175 2.31 2.31 0 0 1-1.64-1.055l-.822-1.316a2.192 2.192 0 0 0-1.736-1.039 48.774 48.774 0 0 0-5.232 0 2.192 2.192 0 0 0-1.736 1.039l-.821 1.316Z" />,
+            Upload: (props) => <Icon {...props} d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5m-13.5-9L12 3m0 0 4.5 4.5M12 3v13.5" />,
+            Refresh: (props) => <Icon {...props} d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />,
+            Leaf: (props) => <Icon {...props} d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582" />,
+            Zap: (props) => <Icon {...props} d="m3.75 13.5 10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75Z" />,
+            Volume: (props) => <Icon {...props} d="M19.114 5.636a9 9 0 0 1 0 12.728M16.463 8.288a5.25 5.25 0 0 1 0 7.424M6.75 8.25l4.72-4.72a.75.75 0 0 1 1.28.53v15.88a.75.75 0 0 1-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.009 9.009 0 0 1 2.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75Z" />,
+            Warning: (props) => <Icon {...props} d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z" />,
+            ChevronDown: (props) => <Icon {...props} d="m19.5 8.25-7.5 7.5-7.5-7.5" />,
+            ChevronUp: (props) => <Icon {...props} d="m4.5 15.75 7.5-7.5 7.5 7.5" />,
+            Sparkles: (props) => <Icon {...props} d="M9.813 15.904 9 18.75l-.813-2.846a4.5 4.5 0 0 0-3.09-3.09L2.25 12l2.846-.813a4.5 4.5 0 0 0 3.09-3.09L9 5.25l.813 2.846a4.5 4.5 0 0 0 3.09 3.09L15.75 12l-2.846.813a4.5 4.5 0 0 0-3.09 3.09ZM18.259 8.715 18 9.75l-.259-1.035a3.375 3.375 0 0 0-2.455-2.456L14.25 6l1.036-.259a3.375 3.375 0 0 0 2.456-2.455L18 2.25l.259 1.036a3.375 3.375 0 0 0 2.455 2.456L21.75 6l-1.035.259a3.375 3.375 0 0 0-2.456 2.455Z" />,
+            Message: (props) => <Icon {...props} d="M8.625 12a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375M21 12c0 4.556-4.03 8.25-9 8.25a9.764 9.764 0 0 1-2.555-.337A5.972 5.972 0 0 1 5.41 20.97a.75.75 0 0 1-1.154-.114 6.09 6.09 0 0 1-.784-2.203A9.23 9.23 0 0 1 3 12c0-4.556 4.03-8.25 9-8.25s9 3.694 9 8.25Z" />,
+            Send: (props) => <Icon {...props} d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />,
+            Baby: (props) => <Icon {...props} d="M12 21a9.004 9.004 0 0 0 8.716-6.747M12 21a9.004 9.004 0 0 1-8.716-6.747M12 21c2.485 0 4.5-4.03 4.5-9S14.485 3 12 3m0 18c-2.485 0-4.5-4.03-4.5-9S9.515 3 12 3m0 0a8.997 8.997 0 0 1 7.843 4.582M12 3a8.997 8.997 0 0 0-7.843 4.582" />,
+            Heart: (props) => <Icon {...props} d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12Z" />,
+            History: (props) => <Icon {...props} d="M12 6v6h4.5m4.5 0a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />,
+            Close: (props) => <Icon {...props} d="M6 18 18 6M6 6l12 12" />,
+            Trash: (props) => <Icon {...props} d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+        };
+
+        function App() {
+            const [stream, setStream] = React.useState(null);
+            const [capturedImage, setCapturedImage] = React.useState(null);
+            const [isAnalyzing, setIsAnalyzing] = React.useState(false);
+            const [result, setResult] = React.useState(null);
+            const [error, setError] = React.useState(null);
+            const [expandedTip, setExpandedTip] = React.useState(null);
+            
+            // Chats states
+            const [chatInput, setChatInput] = React.useState('');
+            const [chatHistory, setChatHistory] = React.useState([]);
+            const [isChatting, setIsChatting] = React.useState(false);
+
+            // History states
+            const [sessionHistory, setSessionHistory] = React.useState([]);
+            const [showHistoryModal, setShowHistoryModal] = React.useState(false);
+            const [currentSessionId, setCurrentSessionId] = React.useState(null);
+            
+            const videoRef = React.useRef(null);
+            const canvasRef = React.useRef(null);
+            const fileInputRef = React.useRef(null);
+
+            const apiKey = ""; // API Key handled by Canvas
+
+            const startCamera = async () => {
+                setError(null);
+                try {
+                    const mediaStream = await navigator.mediaDevices.getUserMedia({ 
+                        video: { facingMode: 'environment' } 
+                    });
+                    setStream(mediaStream);
+                    if (videoRef.current) {
+                        videoRef.current.srcObject = mediaStream;
+                    }
+                } catch (err) {
+                    setError("Camera access nahi mila. Please HTTPS check karein aur permission allow karein.");
+                }
+            };
+
+            const stopCamera = () => {
+                if (stream) {
+                    stream.getTracks().forEach(track => track.stop());
+                    setStream(null);
+                }
+            };
+
+            // 🔥 Proper Reset Function
+            const resetApp = () => {
+                setCapturedImage(null);
+                setResult(null);
+                setError(null);
+                setExpandedTip(null);
+                setChatHistory([]); // Clear chat
+                setChatInput('');
+                setCurrentSessionId(null); // Clear session
+                if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+                startCamera();
+            };
+
+            React.useEffect(() => {
+                startCamera();
+                return () => stopCamera();
+            }, []);
+
+            const captureImage = () => {
+                const video = videoRef.current;
+                const canvas = canvasRef.current;
+                
+                if (video && canvas && video.readyState >= 2) {
+                    canvas.width = video.videoWidth;
+                    canvas.height = video.videoHeight;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                    
+                    const imageData = canvas.toDataURL('image/jpeg');
+                    setCapturedImage(imageData);
+                    stopCamera();
+                    analyzeWaste(imageData);
+                } else {
+                    setError("Camera ready nahi hai. Thoda intezaar karein.");
+                }
+            };
+
+            const analyzeWaste = async (base64Data) => {
+                setIsAnalyzing(true);
+                setError(null);
+                setResult(null);
+                setExpandedTip(null);
+                setChatHistory([]); // Fresh scan means fresh chat
+
+                const base64String = base64Data.split(',')[1];
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+
+                const payload = {
+                    contents: [{
+                        role: "user",
+                        parts: [
+                            { text: "Analyze the image. Focus primarily on identifying any waste, object, or item. If a human is in the image holding an object or standing near an object, IGNORE the human completely and ONLY analyze the object. If it is garbage/waste, provide recycling steps and a specific 'binColor' (Blue, Green, Red, Black, or E-Waste). If it is a healthy/natural item (like fruits), set 'isNatureFriendly' to true. ONLY if there is absolutely NO object and just a human/animal in the frame, set 'binColor' to 'None' and explain it's a living being. Provide a detailed Hinglish report. Ensure all steps fields are arrays of strings." },
+                            { inlineData: { mimeType: "image/jpeg", data: base64String } }
+                        ]
+                    }],
+                    systemInstruction: { parts: [{ text: "Respond ONLY in valid JSON. Fields: objectDetected (bool), isNatureFriendly (bool), natureBenefit (string), objectName, category, binColor (Blue/Green/Red/Black/E-Waste/None), kidTip, kidTipSteps (array), genZTip, genZTipSteps (array), ecoTip, ecoTipSteps (array). If steps are not applicable, return an array with one string explaining why." }] },
+                    generationConfig: { responseMimeType: "application/json" }
+                };
+
+                try {
+                    const response = await fetch(url, { 
+                        method: 'POST', 
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify(payload) 
+                    });
+                    const data = await response.json();
+                    if (data.candidates && data.candidates[0]) {
+                        const rawText = data.candidates[0].content.parts[0].text;
+                        const parsedData = JSON.parse(rawText);
+                        setResult(parsedData);
+
+                        // Save session to history
+                        const newSession = {
+                            id: Date.now(),
+                            image: base64Data,
+                            result: parsedData,
+                            chatHistory: []
+                        };
+                        setSessionHistory(prev => [newSession, ...prev]);
+                        setCurrentSessionId(newSession.id);
+                    } else {
+                        throw new Error("Invalid AI response");
+                    }
+                } catch (err) {
+                    setError("Analysis failed. Connection check karein.");
+                }
+                setIsAnalyzing(false);
+            };
+
+            const speakResult = (data) => {
+                if ('speechSynthesis' in window) {
+                    window.speechSynthesis.cancel();
+                    let text = "";
+                    if (data.isNatureFriendly) {
+                        text = `${data.objectName} detected. This is great for health and nature!`;
+                    } else {
+                        text = `${data.objectName} detected. Category ${data.category}. Bin ${data.binColor || 'Not needed'}.`;
+                    }
+                    const utterance = new SpeechSynthesisUtterance(text);
+                    window.speechSynthesis.speak(utterance);
+                }
+            };
+
+            // Custom function to add message and update history synchronously
+            const addChatMessage = (msg) => {
+                setChatHistory(prev => {
+                    const updatedChat = [...prev, msg];
+                    setSessionHistory(history => history.map(session => 
+                        session.id === currentSessionId ? { ...session, chatHistory: updatedChat } : session
+                    ));
+                    return updatedChat;
+                });
+            };
+
+            const handleSendMessage = async () => {
+                if (!chatInput.trim() || !result) return;
+                const userMsg = chatInput;
+                setChatInput('');
+                addChatMessage({ role: 'user', text: userMsg });
+                setIsChatting(true);
+
+                const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: {'Content-Type': 'application/json'},
+                        body: JSON.stringify({ contents: [{ role: "user", parts: [{ text: `Context: Object is ${result.objectName}. Question: ${userMsg}. Hinglish reply short.` }] }] })
+                    });
+                    const data = await response.json();
+                    addChatMessage({ role: 'ai', text: data.candidates[0].content.parts[0].text });
+                } catch (err) {
+                    addChatMessage({ role: 'ai', text: "Chat server error." });
+                }
+                setIsChatting(false);
+            };
+
+            // Load an old session from History
+            const loadSession = (session) => {
+                setCapturedImage(session.image);
+                setResult(session.result);
+                setChatHistory(session.chatHistory);
+                setCurrentSessionId(session.id);
+                setExpandedTip(null);
+                setShowHistoryModal(false);
+                stopCamera();
+            };
+
+            const tipTypes = [
+                { id: 'kid', badge: 'Age 5-10', title: 'Kids Fun DIY', icon: <Icons.Baby className="w-5 h-5 text-blue-400"/>, style: 'bg-blue-900/20 border-blue-500/30 hover:bg-blue-900/30' },
+                { id: 'genZ', badge: 'Trendy', title: 'Gen-Z Aesthetic', icon: <Icons.Sparkles className="w-5 h-5 text-purple-400"/>, style: 'bg-purple-900/20 border-purple-500/30 hover:bg-purple-900/30' },
+                { id: 'eco', badge: 'Scientific', title: 'Eco-Disposal', icon: <Icons.Leaf className="w-5 h-5 text-emerald-400"/>, style: 'bg-emerald-900/20 border-emerald-500/30 hover:bg-emerald-900/30' }
+            ];
+
+            // Helper for Bulletproof steps rendering
+            const getSteps = (item) => {
+                const stepsData = result[`${item.id}TipSteps`];
+                if (Array.isArray(stepsData) && stepsData.length > 0) return stepsData;
+                if (typeof stepsData === 'string') return [stepsData];
+                return ["Iske liye koi specific steps nahi hain."];
+            };
+
+            return (
+                <div className="min-h-screen text-gray-100 p-4 sm:p-8 relative">
+                    
+                    {/* Header with History Button */}
+                    <div className="max-w-4xl mx-auto flex flex-col items-center mb-8 text-center relative">
+                        <button 
+                            onClick={() => setShowHistoryModal(true)}
+                            className="absolute right-0 top-0 sm:top-2 flex items-center gap-2 bg-gray-800 hover:bg-gray-700 px-4 py-2 rounded-full text-sm border border-gray-600 transition-colors shadow-lg"
+                        >
+                            <Icons.History className="w-4 h-4 text-emerald-400" />
+                            <span className="hidden sm:inline">History</span>
+                            {sessionHistory.length > 0 && <span className="bg-emerald-500 text-black text-xs font-bold px-1.5 rounded-full">{sessionHistory.length}</span>}
+                        </button>
+
+                        <Icons.Leaf className="w-10 h-10 text-emerald-400 mb-2" />
+                        <h1 className="text-4xl font-extrabold bg-gradient-to-r from-emerald-400 to-cyan-400 bg-clip-text text-transparent">SustainoScan AI</h1>
+                        <p className="text-gray-400 text-sm">Science Sustainova 2026</p>
+                    </div>
+
+                    <div className="max-w-4xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+                        {/* LEFT COLUMN */}
+                        <div className="flex flex-col gap-4">
+                            <div className="relative bg-gray-900 rounded-3xl overflow-hidden shadow-2xl ring-1 ring-white/10 aspect-[4/3] flex items-center justify-center">
+                                {!capturedImage ? (
+                                    <video ref={videoRef} autoPlay playsInline muted className="w-full h-full object-cover" />
+                                ) : (
+                                    <img src={capturedImage} className="w-full h-full object-cover" />
+                                )}
+                                {stream && !capturedImage && (
+                                    <div className="absolute inset-0 pointer-events-none">
+                                        <div className="w-full h-1 bg-emerald-400/50 shadow-[0_0_15px_rgba(52,211,153,0.8)] animate-[scan_2s_ease-in-out_infinite]" style={{ animationDirection: 'alternate' }}></div>
+                                    </div>
+                                )}
+                                <canvas ref={canvasRef} className="hidden" />
+                            </div>
+
+                            <div className="flex gap-3">
+                                {!capturedImage ? (
+                                    <>
+                                        <button 
+                                            onClick={captureImage} 
+                                            disabled={!stream}
+                                            className="flex-1 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white font-bold py-4 rounded-2xl flex items-center justify-center gap-2 shadow-lg active:scale-95 transition-all"
+                                        >
+                                            <Icons.Camera /> Scan
+                                        </button>
+                                        <button onClick={() => fileInputRef.current.click()} className="flex-1 bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/10 active:scale-95">
+                                            <Icons.Upload /> File
+                                        </button>
+                                        <input type="file" ref={fileInputRef} className="hidden" accept="image/*" onChange={(e) => {
+                                            const file = e.target.files[0];
+                                            if (file) {
+                                                const reader = new FileReader();
+                                                reader.onloadend = () => { setCapturedImage(reader.result); analyzeWaste(reader.result); };
+                                                reader.readAsDataURL(file);
+                                            }
+                                        }} />
+                                    </>
+                                ) : (
+                                    <button onClick={resetApp} className="w-full bg-gray-800 hover:bg-gray-700 text-gray-300 font-semibold py-4 rounded-2xl flex items-center justify-center gap-2 border border-white/10 active:scale-95">
+                                        <Icons.Refresh /> Reset / Naya Scan
+                                    </button>
+                                )}
+                            </div>
+                            {error && <div className="p-4 bg-red-500/10 border border-red-500/50 text-red-400 rounded-xl text-sm animate-pulse">{error}</div>}
+                        </div>
+
+                        {/* RIGHT COLUMN */}
+                        <div className="flex flex-col gap-4">
+                            {!result && (
+                                <div className="bg-gray-900/50 rounded-3xl h-full min-h-[400px] flex flex-col items-center justify-center p-8 border border-dashed border-gray-700">
+                                    {isAnalyzing ? (
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-12 h-12 border-4 border-t-emerald-500 rounded-full animate-spin"></div>
+                                            <p className="text-emerald-400 animate-pulse">AI Scanning...</p>
+                                        </div>
+                                    ) : (
+                                        <div className="text-gray-600 flex flex-col items-center text-center">
+                                            <Icons.Zap className="mb-2 opacity-20" size={48}/>
+                                            <p>Awaiting scan...</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+
+                            {result && (
+                                <div className="space-y-4 animate-[fadeIn_0.5s_ease-out]">
+                                    {!result.objectDetected ? (
+                                        <div className="p-8 bg-orange-500/10 border border-orange-500/50 rounded-3xl text-center">
+                                            <Icons.Warning className="mx-auto text-orange-400 mb-2"/>
+                                            <h2 className="text-xl font-bold text-orange-300">Nothing Clear Found</h2>
+                                        </div>
+                                    ) : (
+                                        <>
+                                            <div className="bg-gray-900 p-6 rounded-3xl flex justify-between items-center shadow-xl border border-white/5">
+                                                <div>
+                                                    <h2 className="text-2xl font-bold text-white capitalize">{result.objectName}</h2>
+                                                    <span className="text-emerald-400 text-xs font-bold bg-emerald-400/10 px-2 py-1 rounded mt-1 inline-block">
+                                                        {result.isNatureFriendly ? `${result.category} (Good for Nature)` : `${result.category} Waste`}
+                                                    </span>
+                                                </div>
+                                                <div className={`w-14 h-14 rounded-full flex items-center justify-center border-2 border-white/10 shadow-lg ${
+                                                    result.isNatureFriendly ? 'bg-emerald-600' :
+                                                    (result.binColor || '').toLowerCase().includes('blue') ? 'bg-blue-600' :
+                                                    (result.binColor || '').toLowerCase().includes('green') ? 'bg-green-600' :
+                                                    'bg-gray-800'
+                                                }`}>
+                                                    {result.isNatureFriendly ? <Icons.Heart className="text-white" /> : <Icons.Leaf className="text-white" />}
+                                                </div>
+                                            </div>
+
+                                            {/* 🔥 SMART DUSTBIN INDICATOR 🔥 */}
+                                            {!result.isNatureFriendly && result.binColor && !result.binColor.toLowerCase().includes('none') && !result.binColor.toLowerCase().includes('not applicable') && (
+                                                <div className={`p-5 rounded-3xl flex items-center gap-4 shadow-lg border animate-[fadeIn_0.3s_ease-out] ${
+                                                    result.binColor.toLowerCase().includes('blue') ? 'bg-blue-900/30 border-blue-500/50' :
+                                                    result.binColor.toLowerCase().includes('green') ? 'bg-green-900/30 border-green-500/50' :
+                                                    (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'bg-red-900/30 border-red-500/50' :
+                                                    'bg-gray-800 border-gray-600'
+                                                }`}>
+                                                    <div className={`p-3 rounded-full flex-shrink-0 ${
+                                                        result.binColor.toLowerCase().includes('blue') ? 'bg-blue-500/20' :
+                                                        result.binColor.toLowerCase().includes('green') ? 'bg-green-500/20' :
+                                                        (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'bg-red-500/20' :
+                                                        'bg-gray-700'
+                                                    }`}>
+                                                        <Icons.Trash className={`w-8 h-8 ${
+                                                            result.binColor.toLowerCase().includes('blue') ? 'text-blue-400' :
+                                                            result.binColor.toLowerCase().includes('green') ? 'text-green-400' :
+                                                            (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'text-red-400' :
+                                                            'text-gray-400'
+                                                        }`} />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className={`text-lg font-bold capitalize ${
+                                                            result.binColor.toLowerCase().includes('blue') ? 'text-blue-300' :
+                                                            result.binColor.toLowerCase().includes('green') ? 'text-green-300' :
+                                                            (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'text-red-300' :
+                                                            'text-gray-300'
+                                                        }`}>
+                                                            {result.binColor.toLowerCase().includes('e-waste') || result.binColor.toLowerCase().includes('special')
+                                                                ? `${result.binColor} (Special Disposal)`
+                                                                : `${result.binColor} Dustbin mein daalein`
+                                                            }
+                                                        </h3>
+                                                        <p className={`text-sm mt-0.5 ${
+                                                            result.binColor.toLowerCase().includes('blue') ? 'text-blue-200/70' :
+                                                            result.binColor.toLowerCase().includes('green') ? 'text-green-200/70' :
+                                                            (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'text-red-200/70' :
+                                                            'text-gray-400'
+                                                        }`}>
+                                                            {result.binColor.toLowerCase().includes('blue') ? 'Sookha kachra (Dry & Recyclable Waste)' :
+                                                             result.binColor.toLowerCase().includes('green') ? 'Geela kachra (Wet & Compostable Waste)' :
+                                                             (result.binColor.toLowerCase().includes('black') || result.binColor.toLowerCase().includes('red')) ? 'Khatarnak kachra (Hazardous Waste)' :
+                                                             result.binColor.toLowerCase().includes('e-waste') ? 'Electronic kachra - E-waste collection center dein' :
+                                                             'Kripya isey sahi jagah dispose karein'}
+                                                        </p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {result.isNatureFriendly && result.natureBenefit && (
+                                                <div className="bg-gradient-to-r from-emerald-900/40 to-green-900/40 border border-emerald-500/30 p-5 rounded-3xl shadow-lg flex items-start gap-4 animate-[fadeIn_0.4s_ease-out]">
+                                                    <div className="p-3 bg-emerald-500/20 rounded-full shrink-0">
+                                                        <Icons.Heart className="w-6 h-6 text-emerald-400" />
+                                                    </div>
+                                                    <div>
+                                                        <h3 className="text-emerald-300 font-bold mb-1">🌿 Health & Nature Friendly</h3>
+                                                        <p className="text-sm text-emerald-100/90 leading-relaxed">{result.natureBenefit}</p>
+                                                    </div>
+                                                </div>
+                                            )}
+
+                                            {tipTypes.map((item) => (
+                                                <div key={item.id} onClick={() => setExpandedTip(expandedTip === item.id ? null : item.id)} className={`p-5 rounded-3xl border cursor-pointer transition-all ${item.style}`}>
+                                                    <div className="flex justify-between items-center">
+                                                        <h3 className="font-bold flex items-center gap-2">
+                                                            {item.icon} 
+                                                            {result.isNatureFriendly && item.id !== 'eco' ? `${item.title} (Use Idea)` : item.title}
+                                                            <span className="text-[10px] bg-white/10 px-2 py-0.5 rounded opacity-70 ml-1">{item.badge}</span>
+                                                        </h3>
+                                                        {expandedTip === item.id ? <Icons.ChevronUp size={20} /> : <Icons.ChevronDown size={20} />}
+                                                    </div>
+                                                    <p className="text-sm mt-2 text-gray-300 leading-relaxed">{result[`${item.id}Tip`] || "Detail unavailable."}</p>
+                                                    
+                                                    {/* Bulletproof Steps Rendering */}
+                                                    {expandedTip === item.id && (
+                                                        <ul className="mt-4 pt-4 border-t border-white/10 space-y-2">
+                                                            {getSteps(item).map((s, i) => (
+                                                                <li key={i} className="text-xs text-gray-400 leading-relaxed flex gap-2">
+                                                                    <span className="font-bold text-white/40">{i+1}.</span> {s}
+                                                                </li>
+                                                            ))}
+                                                        </ul>
+                                                    )}
+                                                </div>
+                                            ))}
+                                            
+                                            {/* AI Chat Box */}
+                                            <div className="bg-gray-900/50 border border-white/10 p-4 rounded-3xl shadow-inner">
+                                                <div className="max-h-[120px] overflow-y-auto mb-3 space-y-2 scroll-hide flex flex-col">
+                                                    {chatHistory.length === 0 && <div className="text-xs text-gray-500 text-center my-2">Ask AI anything about this!</div>}
+                                                    {chatHistory.map((m, i) => (
+                                                        <div key={i} className={`text-xs p-2 rounded-xl w-fit max-w-[85%] ${m.role === 'user' ? 'bg-emerald-500/20 self-end border border-emerald-500/30 text-emerald-100' : 'bg-gray-800 self-start border border-gray-700 text-gray-300'}`}>
+                                                            {m.text}
+                                                        </div>
+                                                    ))}
+                                                    {isChatting && <div className="text-[10px] opacity-40 animate-pulse px-2">AI thinking...</div>}
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <input value={chatInput} onChange={e => setChatInput(e.target.value)} onKeyPress={e => e.key === 'Enter' && handleSendMessage()} placeholder="Ask AI about this..." className="flex-1 bg-gray-800 border border-gray-700 rounded-xl px-4 py-2 text-xs outline-none focus:border-emerald-500 transition-colors text-white" />
+                                                    <button onClick={handleSendMessage} className="bg-emerald-600 hover:bg-emerald-500 p-2 rounded-xl transition-colors"><Icons.Send className="w-4 h-4 text-white"/></button>
+                                                </div>
+                                            </div>
+
+                                            <button onClick={() => speakResult(result)} className="text-emerald-400 text-xs flex items-center gap-2 px-5 py-2.5 bg-emerald-400/10 rounded-full w-fit hover:bg-emerald-400/20 transition-all border border-emerald-400/20">
+                                                <Icons.Volume size={16}/> Result Suniye
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+
+                    {/* HISTORY MODAL OVERLAY */}
+                    {showHistoryModal && (
+                        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm animate-[fadeIn_0.2s_ease-out]">
+                            <div className="bg-gray-900 border border-gray-700 rounded-3xl w-full max-w-lg overflow-hidden flex flex-col max-h-[85vh] shadow-2xl">
+                                <div className="p-5 border-b border-gray-800 flex justify-between items-center bg-gray-800/30">
+                                    <h2 className="text-xl font-bold flex items-center gap-2"><Icons.History className="text-emerald-400 w-5 h-5" /> Scan History</h2>
+                                    <button onClick={() => setShowHistoryModal(false)} className="p-2 hover:bg-gray-800 rounded-full transition-colors"><Icons.Close /></button>
+                                </div>
+                                <div className="p-4 overflow-y-auto flex-1 space-y-3 scroll-hide">
+                                    {sessionHistory.length === 0 ? (
+                                        <div className="text-center text-gray-500 py-10 flex flex-col items-center gap-2">
+                                            <Icons.Zap className="w-10 h-10 opacity-20" />
+                                            Koi history nahi hai. Pehle kuch scan karein!
+                                        </div>
+                                    ) : (
+                                        sessionHistory.map(session => (
+                                            <div key={session.id} onClick={() => loadSession(session)} className="flex items-center gap-4 p-3 bg-gray-800/40 hover:bg-gray-800 border border-gray-700 hover:border-emerald-500/50 rounded-2xl cursor-pointer transition-all group">
+                                                <img src={session.image} className="w-16 h-16 object-cover rounded-xl border border-gray-700 group-hover:border-emerald-500/50 transition-colors" />
+                                                <div className="flex-1">
+                                                    <h3 className="font-bold text-white capitalize">{session.result.objectName}</h3>
+                                                    <p className="text-[10px] text-gray-400 mt-0.5">{new Date(session.id).toLocaleString('en-IN')}</p>
+                                                    <div className="text-[10px] text-emerald-400 mt-1.5 flex items-center gap-1">
+                                                        <Icons.Message className="w-3 h-3" /> {session.chatHistory.length} Chats
+                                                    </div>
+                                                </div>
+                                                <Icons.ChevronDown className="w-5 h-5 text-gray-500 -rotate-90 mr-2 group-hover:text-emerald-400 transition-colors" />
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
