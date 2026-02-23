@@ -113,7 +113,7 @@
                 }
             };
 
-            // 🔥 Proper Reset Function
+            // Proper Reset Function
             const resetApp = () => {
                 setCapturedImage(null);
                 setResult(null);
@@ -385,7 +385,7 @@
                                                 </div>
                                             </div>
 
-                                            {/* 🔥 SMART DUSTBIN INDICATOR 🔥 */}
+                                            {/*  SMART DUSTBIN INDICATOR  */}
                                             {!result.isNatureFriendly && result.binColor && !result.binColor.toLowerCase().includes('none') && !result.binColor.toLowerCase().includes('not applicable') && (
                                                 <div className={`p-5 rounded-3xl flex items-center gap-4 shadow-lg border animate-[fadeIn_0.3s_ease-out] ${
                                                     result.binColor.toLowerCase().includes('blue') ? 'bg-blue-900/30 border-blue-500/50' :
